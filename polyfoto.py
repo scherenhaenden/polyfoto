@@ -5,6 +5,8 @@ __email__ = "shane.drabing@gmail.com"
 
 import os
 import random
+from multiprocessing import Pool, cpu_count
+
 
 import cv2
 import numpy as np
@@ -220,13 +222,21 @@ if __name__ == "__main__":
 
     # make mosaic
     print("BUILDING".ljust(30))
-    cnv = build(
-        args.f, args.d, thumbs, args.t, args.s, args.n, args.p, args.c
-    )
+    num_processes = cpu_count()
+
+    with Pool(num_processes) as p:
+        cnv = p.starmap(
+            build,
+            [(args.f, args.d, thumbs, args.t, args.s, args.n, args.p, args.c)] * num_processes
+        )
+
+    # Select the mosaic with the best result
+    cnv = max(cnv, key=lambda x: np.sum(x))
+
 
     # save the canvas
     print("SAVING".ljust(30))
-    cv2.imwrite(args.o, cnv)
+    cv2.imwrite(args.o, cnv)    
 
     # all done
     print("DONE :)".ljust(30))
